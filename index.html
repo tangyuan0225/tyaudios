@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>米小圈故事播放器</title>
+    <style>
+        /* 基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            min-height: 100vh;
+            padding: 10px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #5c6bc0;
+            margin: 10px 0 15px 0;
+            font-size: 22px;
+            padding: 10px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* 播放器控制 */
+        .player-controls {
+            background: white;
+            padding: 12px;
+            border-radius: 15px;
+            margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .current-playing {
+            background: #e8eaf6;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+            color: #3f51b5;
+            border-left: 4px solid #3f51b5;
+            word-break: break-word;
+            font-size: 16px;
+        }
+        
+        audio {
+            width: 100%;
+            margin-bottom: 10px;
+            border-radius: 8px;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        
+        button {
+            padding: 15px 8px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #5c6bc0 0%, #7986cb 100%);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            min-height: 60px;
+            box-shadow: 0 3px 5px rgba(92,107,192,0.3);
+        }
+        
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 3px rgba(92,107,192,0.3);
+        }
+        
+        /* 文件夹选择 */
+        .folder-selector {
+            background: white;
+            padding: 12px;
+            border-radius: 15px;
+            margin: 10px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .folder-selector h3 {
+            color: #3949ab;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .folders {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        
+        .folder {
+            background: linear-gradient(135deg, #fff 0%, #e8eaf6 100%);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #3949ab;
+            cursor: pointer;
+            border: 2px solid #bbdefb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 音频列表 */
+        .audio-list-container {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e8eaf6;
+        }
+        
+        .list-header h3 {
+            color: #3949ab;
+        }
+        
+        .total-count {
+            background: #5c6bc0;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 16px;
+        }
+        
+        .audio-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .audio-item {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e8eaf6;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        
+        .audio-item:active {
+            background: #e8eaf6;
+        }
+        
+        .audio-item.playing {
+            background: linear-gradient(135deg, #c5cae9 0%, #bbdefb 100%);
+            border-left: 4px solid #3f51b5;
+            font-weight: bold;
+        }
+        
+        .audio-number {
+            background: #5c6bc0;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .audio-name {
+            flex: 1;
+        }
+        
+        /* 滚动条 */
+        .audio-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .audio-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .audio-list::-webkit-scrollbar-thumb {
+            background: #9fa8da;
+            border-radius: 3px;
+        }
+        
+        /* 状态提示 */
+        .status {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 米小圈故事播放器</h1>
+        
+        <!-- 播放器控制区域 -->
+        <div class="player-controls">
+            <audio id="audioPlayer" controls></audio>
+            <div class="current-playing" id="currentPlaying">
+                请选择要播放的故事
+            </div>
+            <div class="buttons">
+                <button onclick="playPause()" id="playBtn">▶️ 播放</button>
+                <button onclick="stopAudio()">⏹️ 停止</button>
+                <button onclick="playPrevious()">⏮️ 上一个</button>
+                <button onclick="playNext()">⏭️ 下一个</button>
+            </div>
+        </div>
+        
+        <!-- 文件夹选择 -->
+        <div class="folder-selector">
+            <h3>选择故事系列</h3>
+            <div class="folders">
+                <div class="folder" onclick="loadAudios('来自未来的我')">
+                    ① 来自未来的我
+                </div>
+                <div class="folder" onclick="loadAudios('我班有个小神童')">
+                    ② 我班有个小神童
+                </div>
+                <div class="folder" onclick="loadAudios('我的同桌是卧底')">
+                    ③ 我的同桌是卧底
+                </div>
+                <div class="folder" onclick="loadAudios('遇见猫先生')">
+                    ④ 遇见猫先生
+                </div>
+            </div>
+        </div>
+        
+        <!-- 音频列表区域 -->
+        <div class="audio-list-container">
+            <div class="list-header">
+                <h3>故事列表</h3>
+                <div class="total-count" id="totalCount">0 个故事</div>
+            </div>
+            <div class="audio-list" id="audioList">
+                <div class="status" id="statusMessage">
+                    点击上面的文件夹加载故事
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 完整的音频数据 - 包含4个文件夹
+        const audioData = {
+            "来自未来的我": [
+                { name: "可怕的暑假作业", file: "audios/13.来自未来的我/01可怕的暑假作业.mp3" },
+                { name: "新学期新气象", file: "audios/13.来自未来的我/02新学期新气象.mp3" },
+                { name: "民主选同桌", file: "audios/13.来自未来的我/03民主选同桌.mp3" },
+                { name: "美术班的小胖子", file: "audios/13.来自未来的我/04美术班的小胖子.mp3" },
+                { name: "一整天都倒霉", file: "audios/13.来自未来的我/05一整天都倒霉.mp3" },
+                { name: "小舅舅来了", file: "audios/13.来自未来的我/06小舅舅来了.mp3" },
+                { name: "一封奇怪的信", file: "audios/13.来自未来的我/07一封奇怪的信.mp3" },
+                { name: "我写给米大圈的信", file: "audios/13.来自未来的我/08我写给米大圈的信.mp3" },
+                { name: "又一封古怪的", file: "audios/13.来自未来的我/09又一封古怪的.mp3" },
+                { name: "三条预言", file: "audios/13.来自未来的我/10三条预言.mp3" },
+                { name: "得意的小胖子", file: "audios/13.来自未来的我/11得意的小胖子.mp3" },
+                { name: "开始努力", file: "audios/13.来自未来的我/12开始努力.mp3" },
+                { name: "米大圈的鼓励", file: "audios/13.来自未来的我/13米大圈的鼓励.mp3" },
+                { name: "绘画比赛", file: "audios/13.来自未来的我/14绘画比赛.mp3" },
+                { name: "弥天大谎", file: "audios/13.来自未来的我/15弥天大谎.mp3" },
+                { name: "不想理你", file: "audios/13.来自未来的我/16不想理你.mp3" },
+                { name: "你真的是米大圈吗", file: "audios/13.来自未来的我/17你真的是米大圈吗.mp3" },
+                { name: "获奖", file: "audios/13.来自未来的我/18获奖.mp3" }
+            ],
+            "我班有个小神童": [
+                { name: "一个小朋友", file: "audios/14.我班有个小神童/我班有个小神童：01一个小朋友.mp3" },
+                { name: "我的同桌是小神童", file: "audios/14.我班有个小神童/我班有个小神童：02我的同桌是小神童.mp3" },
+                { name: "米小圈和徐豆豆", file: "audios/14.我班有个小神童/我班有个小神童：03米小圈和徐豆豆.mp3" },
+                { name: "小神童生病了", file: "audios/14.我班有个小神童/我班有个小神童：04小神童生病了.mp3" },
+                { name: "小神童回来了", file: "audios/14.我班有个小神童/我班有个小神童：05小神童回来了.mp3" },
+                { name: "秘密的惊喜", file: "audios/14.我班有个小神童/我班有个小神童：06秘密的惊喜.mp3" },
+                { name: "我要当班长", file: "audios/14.我班有个小神童/我班有个小神童：07我要当班长.mp3" },
+                { name: "新的班长", file: "audios/14.我班有个小神童/我班有个小神童：08新的班长.mp3" },
+                { name: "新的学习委员", file: "audios/14.我班有个小神童/我班有个小神童：09新的学习委员.mp3" },
+                { name: "焕然一新", file: "audios/14.我班有个小神童/我班有个小神童：10焕然一新.mp3" }
+            ],
+            "我的同桌是卧底": [
+                { name: "我的同桌是卧底", file: "audios/15.我的同桌是卧底/我的同桌是卧底:01我的同桌是卧底.mp3" },
+                { name: "针锋相对", file: "audios/15.我的同桌是卧底/我的同桌是卧底:02针锋相对.mp3" },
+                { name: "握手言和", file: "audios/15.我的同桌是卧底/我的同桌是卧底:03握手言和.mp3" },
+                { name: "李黎的愿望", file: "audios/15.我的同桌是卧底/我的同桌是卧底:04李黎的愿望.mp3" },
+                { name: "我是小书虫", file: "audios/15.我的同桌是卧底/我的同桌是卧底:05我是小书虫.mp3" },
+                { name: "公司破产了", file: "audios/15.我的同桌是卧底/我的同桌是卧底:06公司破产了.mp3" },
+                { name: "我的名字我做主", file: "audios/15.我的同桌是卧底/我的同桌是卧底:07我的名字我做主.mp3" },
+                { name: "我爱写小说", file: "audios/15.我的同桌是卧底/我的同桌是卧底:08我爱写小说.mp3" },
+                { name: "米小圈奇遇记", file: "audios/15.我的同桌是卧底/我的同桌是卧底:09米小圈奇遇记.mp3" },
+                { name: "快考试了", file: "audios/15.我的同桌是卧底/我的同桌是卧底:10快考试了.mp3" },
+                { name: "新年联欢会", file: "audios/15.我的同桌是卧底/我的同桌是卧底:11新年联欢会.mp3" },
+                { name: "补习功课", file: "audios/15.我的同桌是卧底/我的同桌是卧底:12补习功课.mp3" },
+                { name: "超越李黎", file: "audios/15.我的同桌是卧底/我的同桌是卧底:13超越李黎.mp3" }
+            ],
+            "遇见猫先生": [
+                { name: "小心愚人节", file: "audios/16.遇见猫先生/遇见猫先生：01小心愚人节.mp3" },
+                { name: "黑眼镜叔叔", file: "audios/16.遇见猫先生/遇见猫先生：02黑眼镜叔叔.mp3" },
+                { name: "新颖的作文", file: "audios/16.遇见猫先生/遇见猫先生：03新颖的作文.mp3" },
+                { name: "莫老师的表扬", file: "audios/16.遇见猫先生/遇见猫先生：04莫老师的表扬.mp3" },
+                { name: "猫先生的新文章", file: "audios/16.遇见猫先生/遇见猫先生：05猫先生的新文章.mp3" },
+                { name: "伤离别", file: "audios/16.遇见猫先生/遇见猫先生：06伤离别.mp3" },
+                { name: "米小圈拍卖会", file: "audios/16.遇见猫先生/遇见猫先生：07米小圈拍卖会.mp3" },
+                { name: "出尔反尔", file: "audios/16.遇见猫先生/遇见猫先生：08出尔反尔.mp3" },
+                { name: "奇怪的事", file: "audios/16.遇见猫先生/遇见猫先生：09奇怪的事.mp3" },
+                { name: "猫先生发财了", file: "audios/16.遇见猫先生/遇见猫先生：10猫先生发财了.mp3" }
+            ]
+        };
+        
+        // 全局变量
+        let audioPlayer = document.getElementById('audioPlayer');
+        let playBtn = document.getElementById('playBtn');
+        let currentPlaying = document.getElementById('currentPlaying');
+        let audioList = document.getElementById('audioList');
+        let totalCount = document.getElementById('totalCount');
+        let statusMessage = document.getElementById('statusMessage');
+        
+        let currentAudios = [];
+        let currentIndex = 0;
+        let currentFolder = '';
+        
+        // 加载音频列表
+        function loadAudios(folder) {
+            currentFolder = folder;
+            currentAudios = audioData[folder] || [];
+            
+            // 更新总数
+            totalCount.textContent = `${currentAudios.length} 个故事`;
+            
+            if (currentAudios.length === 0) {
+                statusMessage.textContent = "这个文件夹还没有故事";
+                return;
+            }
+            
+            // 清空状态信息
+            statusMessage.innerHTML = '';
+            
+            // 生成音频列表HTML
+            let html = '';
+            currentAudios.forEach((audio, index) => {
+                const number = (index + 1).toString().padStart(2, '0');
+                html += `
+                    <div class="audio-item" onclick="playAudio(${index})" id="audio-${index}">
+                        <div class="audio-number">${number}</div>
+                        <div class="audio-name">${audio.name}</div>
+                    </div>
+                `;
+            });
+            
+            audioList.innerHTML = html;
+            
+            // 默认选择第一个
+            currentIndex = 0;
+            playAudio(0);
+        }
+        
+        // 播放音频
+        function playAudio(index) {
+            if (!currentAudios[index]) return;
+            
+            currentIndex = index;
+            const audio = currentAudios[index];
+            
+            // 更新当前播放显示
+            currentPlaying.textContent = `正在播放: ${currentFolder} - ${audio.name}`;
+            
+            // 设置音频源
+            audioPlayer.src = audio.file;
+            
+            // 播放
+            audioPlayer.play();
+            playBtn.textContent = '⏸️ 暂停';
+            
+            // 更新列表选中状态
+            document.querySelectorAll('.audio-item').forEach(item => {
+                item.classList.remove('playing');
+            });
+            document.getElementById(`audio-${index}`).classList.add('playing');
+            
+            // 滚动到当前播放项
+            const playingItem = document.getElementById(`audio-${index}`);
+            if (playingItem) {
+                playingItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        // 播放/暂停
+        function playPause() {
+            if (audioPlayer.paused) {
+                if (!audioPlayer.src) {
+                    // 如果没有音频在播放，播放第一个
+                    if (currentAudios.length > 0) {
+                        playAudio(0);
+                    }
+                } else {
+                    audioPlayer.play();
+                    playBtn.textContent = '⏸️ 暂停';
+                }
+            } else {
+                audioPlayer.pause();
+                playBtn.textContent = '▶️ 播放';
+            }
+        }
+        
+        // 停止
+        function stopAudio() {
+            audioPlayer.pause();
+            audioPlayer.currentTime = 0;
+            playBtn.textContent = '▶️ 播放';
+            currentPlaying.textContent = '已停止播放';
+        }
+        
+        // 播放上一个
+        function playPrevious() {
+            if (currentAudios.length === 0) return;
+            
+            currentIndex = (currentIndex - 1 + currentAudios.length) % currentAudios.length;
+            playAudio(currentIndex);
+        }
+        
+        // 播放下一个
+        function playNext() {
+            if (currentAudios.length === 0) return;
+            
+            currentIndex = (currentIndex + 1) % currentAudios.length;
+            playAudio(currentIndex);
+        }
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 默认加载第一个文件夹
+            loadAudios('来自未来的我');
+            
+            // 音频播放结束事件
+            audioPlayer.addEventListener('ended', function() {
+                playBtn.textContent = '▶️ 播放';
+                // 自动播放下一个
+                playNext();
+            });
+            
+            // 音频播放错误处理
+            audioPlayer.addEventListener('error', function(e) {
+                console.error('音频播放错误:', e);
+                currentPlaying.textContent = '❌ 无法播放此音频';
+                
+                // 尝试播放下一个
+                setTimeout(function() {
+                    playNext();
+                }, 1000);
+            });
+            
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
+                    case ' ':
+                        e.preventDefault();
+                        playPause();
+                        break;
+                    case 'ArrowLeft':
+                        playPrevious();
+                        break;
+                    case 'ArrowRight':
+                        playNext();
+                        break;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
